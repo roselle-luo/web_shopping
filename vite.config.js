@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',  // 监听所有网络接口
     proxy: {
       // 当请求路径以 /api 开头时，代理到目标地址
       '/api': {

@@ -19,7 +19,3 @@ export const userLogin = async (username, password) => {
 export const getLists = async () => {
     return (await instance.get(`/goods/list`)).data;
 };
-
-export const deleteUser = (id) => {
-    return instance.delete(`/users/${id}`);
-};

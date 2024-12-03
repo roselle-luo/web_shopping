@@ -78,6 +78,8 @@
 import {ref} from "vue";
 import {ElMessage} from "element-plus";
 import {userLogin, userRegister} from "@/utils/apis";
+import router from "@/router/router";
+import {useStore} from "vuex";
 
 const loginForm = ref({
   loginUsername: '',
@@ -136,6 +138,7 @@ const registerRules = {
 
 const loginFormRef = ref(null);
 const registerFormRef = ref(null);
+const store = useStore();
 
 const onSubmitLogin = () => {
   loginFormRef.value.validate( async (valid) => {
@@ -143,6 +146,11 @@ const onSubmitLogin = () => {
       const response = await login(loginForm.value.loginUsername, loginForm.value.loginPassword)
       if (response !== 'invalid') {
         ElMessage.success('登录成功')
+        store.state.user = {
+          username: loginForm.value.loginUsername,
+          userId: response
+        }
+        await router.push('home')
       } else {
         ElMessage.error('登录失败')
       }
