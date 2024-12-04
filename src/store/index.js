@@ -14,12 +14,6 @@ export default createStore({
         },
     },
     actions: {
-        fetchUser({ commit }) {
-            // 假设这是一个异步请求
-            setTimeout(() => {
-                commit('setUser', { name: 'John Doe' });
-            }, 1000);
-        },
     },
     getters: {
         isLoggedIn(state) {
