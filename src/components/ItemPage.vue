@@ -22,7 +22,7 @@
         <h3>{{ item.name }}</h3>
         <div class="product-info-container">
           <p>¥{{ item.price1 }}</p>
-          <el-button class="el-button">添加</el-button>
+          <el-button class="el-button" @click="addItem(store.state.user.userId, item.id, item.price1)">添加</el-button>
         </div>
       </div>
     </div>
@@ -31,13 +31,15 @@
 
 <script setup>
 import {onMounted, ref} from "vue";
-import {getLists} from "@/utils/apis";
+import {addItemNumber, getLists} from "@/utils/apis";
 import {Refresh} from "@element-plus/icons-vue";
 import {ElMessage} from "element-plus";
+import {useStore} from "vuex";
 
 const products = ref([]);
 const searchedItems = ref([]);
 const query = ref('')
+const store = useStore()
 
 const getItems = async () => {
   products.value = await getLists()
@@ -63,6 +65,11 @@ const search = () => {
 const reset = () => {
   query.value = ''
   searchedItems.value = products.value
+}
+
+const addItem = async (userId, goodsId, price) => {
+  const response = await addItemNumber(userId, goodsId, price)
+  console.log(response)
 }
 
 onMounted(() => {

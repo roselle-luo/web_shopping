@@ -5,24 +5,25 @@
       <div class="item-container">
       <div v-for="item in addedItems" :key="item.id">
         <div class="card-container">
+          <input type="checkbox" name="isSelected" value='false' class="card-checkbox">
           <el-image class="item-image"
-                    src="https://gw.alicdn.com/imgextra/i1/1641229099/O1CN01CWLdyX2H5OinggMwo_!!1641229099.jpg"></el-image>
+                    :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
           <div class="card-text-container">
-            <h4 class="card-text">松下 Lumix DMC-FZ1000松下松下</h4>
+            <h4 class="card-text">{{ item.name }}</h4>
           </div>
           <div class="card-price-container">
-            <p>单价</p>
-            <h4 class="price-text">¥4999.0</h4>
+            <p class="price-title">单价</p>
+            <h4 class="price-text">¥{{item.price}}</h4>
           </div>
           <div class="card-price-container">
-            <p>总价</p>
-            <h4 class="price-text">¥4999.0</h4>
+            <p class="price-title">总价</p>
+            <h4 class="price-text">¥{{ item.price }}</h4>
           </div>
           <div class="edit-number-container">
-            <p>数量</p>
+            <p class="price-title">数量</p>
             <el-input-number class="edit-number"></el-input-number>
           </div>
-          <el-button color="red" icon="delete" class="card-delete-button">
+          <el-button color="red" icon="delete" class="card-delete-button" @click="delete1(item.cardid)">
             删除
           </el-button>
         </div>
@@ -38,19 +39,20 @@
 <script setup>
 
 import {onMounted, ref} from "vue";
+import {useStore} from "vuex";
+import {deleteItem, getUserAddedItems} from "@/utils/apis";
 
 const addedItems = ref([])
-const singleItem = {
-  id: 0,
-  name: '松下 Lumix DMC-FZ1000松下松下',
-  img: 'https://gw.alicdn.com/imgextra/i1/1641229099/O1CN01CWLdyX2H5OinggMwo_!!1641229099.jpg',
-  price: '￥4999.0'
+const store = useStore()
+
+const delete1 = async (cardId) => {
+  await deleteItem(store.state.user.userId, cardId)
+  addedItems.value = await getUserAddedItems(store.state.user.userId)
 }
 
-onMounted(() => {
-  for (let i=0;i<50;i++) {
-    addedItems.value.push({ ...singleItem, id: i });
-  }
+onMounted( async () => {
+   addedItems.value = await getUserAddedItems(store.state.user.userId)
+   console.log(addedItems.value)
 })
 
 </script>
@@ -87,6 +89,13 @@ onMounted(() => {
   padding: 15px;
 }
 
+.card-checkbox {
+  width: 20px;
+  height: 20px;
+  margin: auto 0;
+  accent-color: orangered;
+}
+
 .item-image {
   width: 100px;
   height: auto;
@@ -98,7 +107,7 @@ onMounted(() => {
 
 .card-text-container {
   margin: auto 0;
-  width: 100px;
+  width: 120px;
 }
 
 .card-text {
@@ -109,6 +118,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   margin-left: 50px;
+}
+
+.price-title {
+  margin: 0 auto;
 }
 
 .price-text {

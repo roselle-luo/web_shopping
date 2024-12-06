@@ -150,6 +150,7 @@ const onSubmitLogin = () => {
           username: loginForm.value.loginUsername,
           userId: response
         }
+        console.log(store.state.user)
         await router.push('home')
       } else {
         ElMessage.error('登录失败')
