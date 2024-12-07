@@ -22,7 +22,7 @@
         <h3>{{ item.name }}</h3>
         <div class="product-info-container">
           <p>¥{{ item.price1 }}</p>
-          <el-button class="el-button" @click="addItem(store.state.user.userId, item.id, item.price1)">添加</el-button>
+          <el-button color="#fd4806" @click="addItem(store.state.user.userId, item.id, item.price1)">添加</el-button>
         </div>
       </div>
     </div>
@@ -39,6 +39,7 @@ import {useStore} from "vuex";
 const products = ref([]);
 const searchedItems = ref([]);
 const query = ref('')
+const addLoading = ref(false)
 const store = useStore()
 
 const getItems = async () => {
@@ -68,8 +69,14 @@ const reset = () => {
 }
 
 const addItem = async (userId, goodsId, price) => {
-  const response = await addItemNumber(userId, goodsId, price)
-  console.log(response)
+  if (!addLoading.value) {
+    addLoading.value = true
+    const response = await addItemNumber(userId, goodsId, price)
+    console.log(response)
+    addLoading.value = false
+  } else {
+    ElMessage.info('正在添加中...')
+  }
 }
 
 onMounted(() => {
@@ -90,7 +97,7 @@ onMounted(() => {
  .search-box {
    width: 60%;
    display: flex;
-   border: 3px solid #89bef4;
+   border: 3px solid #fd6506;
    border-radius: 12px;
    height: 50px;
    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -114,7 +121,7 @@ onMounted(() => {
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
-  background-color: #7ab9ff; /* 按钮浅蓝色 */
+  background-color: #fd6506; /* 按钮浅蓝色 */
   color: #fff;
   font-size: 14px;
   cursor: pointer;
@@ -122,7 +129,7 @@ onMounted(() => {
 }
 
 .search-button:hover {
-  background-color: #549ede;
+  background-color: #fd6506;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
   transform: scale(1.05); /* 轻微缩放效果 */
 }
@@ -131,14 +138,13 @@ onMounted(() => {
   height: 50px;
   width: 50px;
   margin-left: 10px;
-  color: #549ede;
+  color: #fb7514;
 }
 
 .refresh-icon:hover {
-  height: 50px;
-  width: 50px;
   margin-left: 10px;
-  color: #549ede;
+  color: #fb7514;
+  transform: scale(1.2); /* 轻微缩放效果 */
 }
 
 .grid-container {
@@ -194,7 +200,7 @@ onMounted(() => {
 }
 
 .el-button {
-  background: #4ea0f4;
+  background: #fd4806;
   color: white;
 }
 

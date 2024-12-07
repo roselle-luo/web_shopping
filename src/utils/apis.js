@@ -57,3 +57,27 @@ export const addItemNumber = async (userId, goodsId, price) => {
     await deleteItem(userId, targetItem.cardid)
     await addItem(userId, goodsId, newNum.toString(), newPrice.toString())
 }
+
+export const setItemNumber = async (userId, goodsId, number, price) => {
+    const currentItems = await getUserAddedItems(userId)
+    const targetItem = currentItems.find(item => item.goodsId === goodsId)
+    if (targetItem != null) {
+        await deleteItem(userId, targetItem.cardid)
+    }
+    await addItem(userId, goodsId, number, price)
+}
+
+export const generateList = async (userId, cartList) => {
+    const params = {
+        userId: userId,
+        cartList: cartList
+    }
+    return (await instance.get('/order/addCastOrder', {params: params})).data
+}
+
+export const getAllLists = async (userId) => {
+    const params = {
+        userId: userId
+    }
+    return (await instance.get('/order/listByUser', {params: params})).data
+}

@@ -2,37 +2,45 @@
   <div class="body">
     <div class="cart-items-container">
       <h3>购物车</h3>
-      <div class="item-container">
+      <el-card class="item-container">
+        <el-button type="danger" text @click="ElMessage.success('aaa')">一键全选</el-button>
       <div v-for="item in addedItems" :key="item.id">
         <div class="card-container">
-          <input type="checkbox" name="isSelected" value='false' class="card-checkbox">
-          <el-image class="item-image"
-                    :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
-          <div class="card-text-container">
-            <h4 class="card-text">{{ item.name }}</h4>
+          <div class="image-container">
+            <input type="checkbox" name="isSelected" value='false' class="card-checkbox">
+            <el-image class="item-image"
+                      :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
           </div>
-          <div class="card-price-container">
-            <p class="price-title">单价</p>
+          <div class="content-container">
+            <h4>{{ item.name }}</h4>
+          </div>
+          <div class="content-container">
             <h4 class="price-text">¥{{item.price}}</h4>
           </div>
-          <div class="card-price-container">
-            <p class="price-title">总价</p>
-            <h4 class="price-text">¥{{ item.price }}</h4>
+          <div class="content-container">
+            <el-input-number v-model="item.num" :min="1" @change="changeItemNumber(userId, item.goodsId, item.num, parseInt(item.num) * item.singlePrice)" size="large" class="edit-number"></el-input-number>
           </div>
-          <div class="edit-number-container">
-            <p class="price-title">数量</p>
-            <el-input-number class="edit-number"></el-input-number>
+          <div class="content-container">
+            <el-button color="red" icon="delete" class="card-delete-button" @click="delete1(item.cardid)">
+              删除
+            </el-button>
           </div>
-          <el-button color="red" icon="delete" class="card-delete-button" @click="delete1(item.cardid)">
-            删除
-          </el-button>
         </div>
       </div>
+      </el-card>
+    </div>
+    <el-card class="fixed-footer">
+      <div class="foot-body">
+        <div class="price-container">
+            <h3>总价：￥13778 元</h3>
+        </div>
+        <div class="settle-container">
+          <el-button icon="delete">清空购物车</el-button>
+          <div style="width: 50px;"></div>
+          <el-button icon="shop" color="orangered">结算</el-button>
+        </div>
       </div>
-    </div>
-    <div class="calculate-container">
-      结算
-    </div>
+    </el-card>
   </div>
 </template>
 
@@ -40,19 +48,33 @@
 
 import {onMounted, ref} from "vue";
 import {useStore} from "vuex";
-import {deleteItem, getUserAddedItems} from "@/utils/apis";
+import {deleteItem, getUserAddedItems, setItemNumber} from "@/utils/apis";
+import {ElMessage} from "element-plus";
 
 const addedItems = ref([])
 const store = useStore()
+const userId = store.state.user.userId
 
 const delete1 = async (cardId) => {
   await deleteItem(store.state.user.userId, cardId)
   addedItems.value = await getUserAddedItems(store.state.user.userId)
 }
 
+const changeItemNumber = async (userId, goodsId, number, price) => {
+  await setItemNumber(userId, goodsId, number, price)
+  await getItems()
+}
+
+const getItems = async () => {
+  addedItems.value = await getUserAddedItems(store.state.user.userId)
+  addedItems.value.forEach((item) => {
+    item.singlePrice = parseInt(item.price) / parseInt(item.num)
+  })
+  console.log(addedItems.value)
+}
+
 onMounted( async () => {
-   addedItems.value = await getUserAddedItems(store.state.user.userId)
-   console.log(addedItems.value)
+  await getItems()
 })
 
 </script>
@@ -62,12 +84,13 @@ onMounted( async () => {
 .body {
   display: flex;
   width: 100%;
-  justify-content: space-between;
-  padding: 25px 100px;
+  padding: 25px 0;
 }
 
 .cart-items-container {
-  flex: 2;
+  flex: 1;
+  margin: 0 50px;
+  margin-bottom: 70px;
 }
 
 .cart-items-container h3 {
@@ -89,6 +112,17 @@ onMounted( async () => {
   padding: 15px;
 }
 
+.image-container {
+  width: 200px;
+  display: flex;
+}
+
+.content-container {
+  display: flex;
+  flex: 1;
+  margin: auto 0;
+}
+
 .card-checkbox {
   width: 20px;
   height: 20px;
@@ -102,26 +136,6 @@ onMounted( async () => {
   object-fit: cover;
   border-radius: 12px;
   margin: 0 20px;
-  margin-right: 40px;
-}
-
-.card-text-container {
-  margin: auto 0;
-  width: 120px;
-}
-
-.card-text {
-  overflow: auto;
-}
-
-.card-price-container {
-  display: flex;
-  flex-direction: column;
-  margin-left: 50px;
-}
-
-.price-title {
-  margin: 0 auto;
 }
 
 .price-text {
@@ -130,14 +144,9 @@ onMounted( async () => {
   font-size: large;
 }
 
-.edit-number-container {
-  display: flex;
-  flex-direction: column;
-  margin: 0 auto;
-}
-
 .edit-number {
   margin: auto 0;
+  color: #f84802;
 }
 
 .card-delete-button {
@@ -145,9 +154,34 @@ onMounted( async () => {
   margin-left: auto;
 }
 
-.calculate-container {
-  flex: 1;
-  margin-left: 100px;
+.fixed-footer {
+  background-color: white;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 65px;
+  opacity: 1;
+  text-align: center;
+}
+
+.foot-body {
+  display: flex;
+  width: 100%;
+}
+
+.price-container {
+  margin: auto 25px;
+}
+
+.price-container h3 {
+  color: #f84802;
+}
+
+.settle-container {
+  display: flex;
+  margin: auto 20px;
+  margin-left: auto;
 }
 
 </style>

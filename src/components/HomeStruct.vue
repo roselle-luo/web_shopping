@@ -3,6 +3,9 @@
       :default-active='activeIndex'
       class="header-style"
       mode="horizontal"
+      text-color="black"
+      background-color="white"
+      active-text-color="#fd6506"
       :ellipsis="false"
   >
     <el-menu-item index="1" class="menu-item-style" @click="toItems">商品首页</el-menu-item>
