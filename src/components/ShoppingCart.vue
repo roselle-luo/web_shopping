@@ -3,11 +3,11 @@
     <div class="cart-items-container">
       <h3>购物车</h3>
       <el-card class="item-container">
-        <el-button type="danger" text @click="ElMessage.success('aaa')">一键全选</el-button>
+        <el-button type="danger" text @click="selectAll">一键全选</el-button>
       <div v-for="item in addedItems" :key="item.id">
         <div class="card-container">
           <div class="image-container">
-            <input type="checkbox" name="isSelected" value='false' class="card-checkbox">
+            <input type="checkbox"  v-model="item.selected" :value="item.id" class="card-checkbox">
             <el-image class="item-image"
                       :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
           </div>
@@ -32,12 +32,12 @@
     <el-card class="fixed-footer">
       <div class="foot-body">
         <div class="price-container">
-            <h3>总价：￥13778 元</h3>
+            <h3>总价：￥{{totalPrice}} 元</h3>
         </div>
         <div class="settle-container">
-          <el-button icon="delete">清空购物车</el-button>
+          <el-button icon="delete" round color="black" @click="confirmDelete">一键清除所选</el-button>
           <div style="width: 50px;"></div>
-          <el-button icon="shop" color="orangered">结算</el-button>
+          <el-button icon="shop" color="red" @click="showSelectedItems">结算</el-button>
         </div>
       </div>
     </el-card>
@@ -49,15 +49,16 @@
 import {onMounted, ref} from "vue";
 import {useStore} from "vuex";
 import {deleteItem, getUserAddedItems, setItemNumber} from "@/utils/apis";
-import {ElMessage} from "element-plus";
+import {ElMessage, ElMessageBox} from "element-plus";
 
 const addedItems = ref([])
 const store = useStore()
 const userId = store.state.user.userId
+const totalPrice = ref(0.0)
 
 const delete1 = async (cardId) => {
   await deleteItem(store.state.user.userId, cardId)
-  addedItems.value = await getUserAddedItems(store.state.user.userId)
+  await getItems()
 }
 
 const changeItemNumber = async (userId, goodsId, number, price) => {
@@ -67,10 +68,52 @@ const changeItemNumber = async (userId, goodsId, number, price) => {
 
 const getItems = async () => {
   addedItems.value = await getUserAddedItems(store.state.user.userId)
+  totalPrice.value = 0
   addedItems.value.forEach((item) => {
     item.singlePrice = parseInt(item.price) / parseInt(item.num)
+    totalPrice.value += parseInt(item.price)
   })
-  console.log(addedItems.value)
+  totalPrice.value = parseFloat(totalPrice.value.toFixed(1))
+  console.log(totalPrice.value)
+}
+
+const selectAll = () => {
+  addedItems.value.forEach((item) => {
+    item.selected = true
+  })
+}
+
+const showSelectedItems = () => {
+  addedItems.value.forEach((item) => {
+    if (item.selected) {
+      console.log(item.name)
+    }
+  })
+}
+
+const confirmDelete = () => {
+  ElMessageBox.confirm(
+      '你确定要删除全部所选内容吗',
+      '确定删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+  )
+      .then( async () => {
+        await Promise.all(
+            addedItems.value
+                .filter(item => item.selected) // 先筛选出选中的项
+                .map(item => delete1(item.cardid)) // 为每个选中的项创建 Promise
+        );
+        ElMessage({
+          type: 'success',
+          message: '删除成功',
+        })
+      })
+      .catch(() => {
+      })
 }
 
 onMounted( async () => {
@@ -180,7 +223,7 @@ onMounted( async () => {
 
 .settle-container {
   display: flex;
-  margin: auto 20px;
+  margin: auto 25px;
   margin-left: auto;
 }
 
