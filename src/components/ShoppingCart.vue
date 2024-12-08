@@ -4,40 +4,42 @@
       <h3>购物车</h3>
       <el-card class="item-container">
         <el-button type="danger" text @click="selectAll">一键全选</el-button>
-      <div v-for="item in addedItems" :key="item.id">
-        <div class="card-container">
-          <div class="image-container">
-            <input type="checkbox"  v-model="item.selected" :value="item.id" class="card-checkbox">
-            <el-image class="item-image"
-                      :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
-          </div>
-          <div class="content-container">
-            <h4>{{ item.name }}</h4>
-          </div>
-          <div class="content-container">
-            <h4 class="price-text">¥{{item.price}}</h4>
-          </div>
-          <div class="content-container">
-            <el-input-number v-model="item.num" :min="1" @change="changeItemNumber(userId, item.goodsId, item.num, parseInt(item.num) * item.singlePrice)" size="large" class="edit-number"></el-input-number>
-          </div>
-          <div class="content-container">
-            <el-button color="red" icon="delete" class="card-delete-button" @click="delete1(item.cardid)">
-              删除
-            </el-button>
+        <div v-for="item in addedItems" :key="item.id">
+          <div class="card-container">
+            <div class="image-container">
+              <input type="checkbox" v-model="item.selected" :value="item.id" @change="updateTotalPrice" class="card-checkbox">
+              <el-image class="item-image"
+                        :src="`http://10.60.81.45:8080/${item.thumbnail}`"></el-image>
+            </div>
+            <div class="content-container">
+              <h4>{{ item.name }}</h4>
+            </div>
+            <div class="content-container">
+              <h4 class="price-text">¥{{ item.price }}</h4>
+            </div>
+            <div class="content-container">
+              <el-input-number v-model="item.num" :min="1"
+                               @change="changeItemNumber(userId, item.goodsId, item.num, parseInt(item.num) * item.singlePrice)"
+                               size="large" class="edit-number"></el-input-number>
+            </div>
+            <div class="content-container">
+              <el-button color="red" icon="delete" class="card-delete-button" @click="delete1(item.cardid)">
+                删除
+              </el-button>
+            </div>
           </div>
         </div>
-      </div>
       </el-card>
     </div>
     <el-card class="fixed-footer">
       <div class="foot-body">
         <div class="price-container">
-            <h3>总价：￥{{totalPrice}} 元</h3>
+          <h3>总价：￥{{ totalPrice }} 元</h3>
         </div>
         <div class="settle-container">
           <el-button icon="delete" round color="black" @click="confirmDelete">一键清除所选</el-button>
           <div style="width: 50px;"></div>
-          <el-button icon="shop" color="red" @click="showSelectedItems">结算</el-button>
+          <el-button icon="shop" color="red" @click="confirmSettleAll">结算</el-button>
         </div>
       </div>
     </el-card>
@@ -48,7 +50,7 @@
 
 import {onMounted, ref} from "vue";
 import {useStore} from "vuex";
-import {deleteItem, getUserAddedItems, setItemNumber} from "@/utils/apis";
+import {deleteItem, generateList, getUserAddedItems, setItemNumber} from "@/utils/apis";
 import {ElMessage, ElMessageBox} from "element-plus";
 
 const addedItems = ref([])
@@ -69,26 +71,42 @@ const changeItemNumber = async (userId, goodsId, number, price) => {
 const getItems = async () => {
   addedItems.value = await getUserAddedItems(store.state.user.userId)
   totalPrice.value = 0
-  addedItems.value.forEach((item) => {
-    item.singlePrice = parseInt(item.price) / parseInt(item.num)
-    totalPrice.value += parseInt(item.price)
-  })
+  updateTotalPrice()
   totalPrice.value = parseFloat(totalPrice.value.toFixed(1))
   console.log(totalPrice.value)
+}
+
+const updateTotalPrice = () => {
+  totalPrice.value = 0
+  addedItems.value.forEach((item) => {
+    item.singlePrice = parseInt(item.price) / parseInt(item.num)
+    if (item.selected) {
+      totalPrice.value += parseInt(item.price)
+    }
+  })
 }
 
 const selectAll = () => {
   addedItems.value.forEach((item) => {
     item.selected = true
   })
+  updateTotalPrice()
 }
 
-const showSelectedItems = () => {
-  addedItems.value.forEach((item) => {
-    if (item.selected) {
-      console.log(item.name)
+const deleteSelected = async () => {
+  const promises = addedItems.value
+      .filter(item => item.selected) // 先筛选出选中的项
+      .map(item => delete1(item.cardid)) // 为每个选中的项创建 Promise
+  if (promises.length > 0) {
+    try {
+      await Promise.all(promises);
+      ElMessage.success('删除成功');
+    } catch (error) {
+      ElMessage.error('删除失败:', error);
     }
-  })
+  } else {
+    ElMessage.error('还未选择任何商品哦！')
+  }
 }
 
 const confirmDelete = () => {
@@ -101,22 +119,46 @@ const confirmDelete = () => {
         type: 'warning',
       }
   )
-      .then( async () => {
-        await Promise.all(
-            addedItems.value
-                .filter(item => item.selected) // 先筛选出选中的项
-                .map(item => delete1(item.cardid)) // 为每个选中的项创建 Promise
-        );
-        ElMessage({
-          type: 'success',
-          message: '删除成功',
-        })
+      .then(async () => {
+        await deleteSelected()
       })
       .catch(() => {
       })
 }
 
-onMounted( async () => {
+const confirmSettleAll = () => {
+  ElMessageBox.confirm(
+      '确定进行结算操作吗？',
+      '确定结算',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+  )
+      .then(async () => {
+        await settleAll()
+      })
+      .catch(() => {
+      })
+}
+
+const settleAll = async () => {
+  const cartIdList = addedItems.value
+      .filter(item => item.selected === true) // 筛选出符合条件的子项
+      .map(item => item.cardid) // 提取每个符合条件子项的 id
+      .join(',') //以逗号分隔每个id
+  if (cartIdList === '') {
+    ElMessage.error('未选择商品！')
+  }
+  const response = await generateList(userId, cartIdList)
+  if (response != null) {
+    ElMessage.success('结算成功')
+  }
+  await getItems()
+}
+
+onMounted(async () => {
   await getItems()
 })
 

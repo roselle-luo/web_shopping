@@ -33,7 +33,7 @@
 import {onMounted, ref} from "vue";
 import {addItemNumber, getLists} from "@/utils/apis";
 import {Refresh} from "@element-plus/icons-vue";
-import {ElMessage} from "element-plus";
+import {ElLoading, ElMessage} from "element-plus";
 import {useStore} from "vuex";
 
 const products = ref([]);
@@ -70,14 +70,25 @@ const reset = () => {
 
 const addItem = async (userId, goodsId, price) => {
   if (!addLoading.value) {
-    addLoading.value = true
-    const response = await addItemNumber(userId, goodsId, price)
-    console.log(response)
-    addLoading.value = false
+    addLoading.value = true;
+    const loadingInstance = ElLoading.service({
+      lock: true,
+      text: '正在添加中...',
+      background: 'rgba(0, 0, 0, 0.7)',
+    });
+    try {
+      const response = await addItemNumber(userId, goodsId, price);
+      console.log(response);
+    } catch (error) {
+      console.error('添加商品失败:', error);
+    } finally {
+      addLoading.value = false;
+      loadingInstance.close();
+    }
   } else {
-    ElMessage.info('正在添加中...')
+    ElMessage.info('正在添加中...');
   }
-}
+};
 
 onMounted(() => {
   getItems()
