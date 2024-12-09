@@ -148,8 +148,10 @@ const settleAll = async () => {
       .filter(item => item.selected === true) // 筛选出符合条件的子项
       .map(item => item.cardid) // 提取每个符合条件子项的 id
       .join(',') //以逗号分隔每个id
+  console.log(cartIdList)
   if (cartIdList === '') {
     ElMessage.error('未选择商品！')
+    return
   }
   const response = await generateList(userId, cartIdList)
   if (response != null) {
