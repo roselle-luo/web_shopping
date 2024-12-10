@@ -22,13 +22,13 @@
         </el-button>
       </div>
       <div class="reset-box">
-        <el-button size="small" class="reset-button" color="orangered" @click="reset" icon="Delete">
+        <el-button size="small" class="reset-button" color="orangered" @click="reset" icon="refresh">
           重置
         </el-button>
       </div>
     </div>
     <el-collapse v-model="activeNames" @change="handleChange">
-      <div v-for="order in orders" :key="order.id">
+      <div v-for="order in currentPageOrders" :key="order.id">
         <el-collapse-item class="collapse-container">
           <template #title>
             <div class="title-container">
@@ -65,6 +65,8 @@
         <div class="spacer"></div>
       </div>
     </el-collapse>
+    <el-pagination class="bottom-navigator" background layout="prev, pager, next" :total='length'
+                   v-model:current-page="currentPage" @current-change="updatePage(currentPage)"/>
   </div>
 </template>
 
@@ -75,7 +77,10 @@ import {getAllLists} from "@/utils/apis";
 import {ElMessage} from "element-plus";
 
 const activeNames = ref(["1"]);
+const currentPage = ref(1)
+const currentPageOrders = ref([])
 const orders = ref([]);
+const length = ref(0);
 let copyOrders = [];
 const store = useStore();
 const userId = store.state.user.userId;
@@ -108,18 +113,23 @@ const changeSortWay = (sortNum) => {
   switch (sortNum) {
     case 1:
       orders.value = [...copyOrders]
+      updatePage(currentPage.value)
       return
     case 2:
       upOrderByTime()
+      updatePage(currentPage.value)
       return;
     case 3:
       downOrderByTime()
+      updatePage(currentPage.value)
       return;
     case 4:
       upOrderByTotalPrice()
+      updatePage(currentPage.value)
       return;
     case 5:
       downOrderByTotalPrice()
+      updatePage(currentPage.value)
       return;
   }
 }
@@ -135,6 +145,7 @@ const downOrderByTotalPrice = () => orders.value.sort((a, b) => new Date(b.total
 const reset = () => {
   searchWord.value = ''
   orders.value = [...copyOrders]
+  updatePage(currentPage.value)
 }
 
 const search = (keyWord) => {
@@ -142,11 +153,12 @@ const search = (keyWord) => {
     ElMessage.error('请输入有效内容')
     return
   }
-  orders.value = orders.value.filter(item =>
+  orders.value = copyOrders.filter(item =>
       ['id', 'formatDate'].some(key =>
           String(item[key])?.toLowerCase().includes(keyWord.toLowerCase())
       )
   )
+  updatePage(currentPage.value)
 }
 
 const formatTime = (dateStr) => {
@@ -163,7 +175,6 @@ const formatDate = (dateStr) => {
     timeZone: 'UTC'
   }).format(date)
 }
-
 
 const mapperDay = (weekDay) => {
   switch (weekDay) {
@@ -192,9 +203,16 @@ const calTotalPrice = (item) => {
   return num * dealPrice
 }
 
+const updatePage = (page) => {
+  currentPageOrders.value = orders.value.slice((page - 1) * 10, 10 + (page - 1) * 10)
+  length.value = orders.value.length
+}
+
 onMounted(async () => {
   console.log(userId)
   orders.value = await getAllLists(userId);
+  length.value = orders.value.length
+  console.log(length.value)
   orders.value.forEach((item) => {
     item.totalPrice = 0
     item.orderDetail.forEach((e) => {
@@ -207,17 +225,14 @@ onMounted(async () => {
     })
   })
   copyOrders = [...orders.value]
+  updatePage(currentPage.value)
 });
 </script>
 
 <style scoped>
 .body {
   padding: 15px 10px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
-  backdrop-filter: blur(10px); /* 玻璃效果 */
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* 轻微阴影 */
+  margin-bottom: 20px;
 }
 
 .title-style {
@@ -228,6 +243,13 @@ onMounted(async () => {
   color: #fd6506;
   text-align: center;
   padding-bottom: 10px;
+}
+
+.bottom-navigator {
+  display: flex;
+  justify-content: center;
+  margin-right: 30px;
+  margin-top: 5px;
 }
 
 .setting-container {
