@@ -65,8 +65,7 @@
         <div class="spacer"></div>
       </div>
     </el-collapse>
-    <el-pagination class="bottom-navigator" background layout="prev, pager, next" :total='length'
-                   v-model:current-page="currentPage" @current-change="updatePage(currentPage)"/>
+    <el-pagination background class="bottom-navigator" layout="prev, pager, next, total" :total='length' v-model:current-page="currentPage" @current-change="updatePage(currentPage)"/>
   </div>
 </template>
 
@@ -248,8 +247,8 @@ onMounted(async () => {
 .bottom-navigator {
   display: flex;
   justify-content: center;
-  margin-right: 30px;
   margin-top: 5px;
+  align-items: center;
 }
 
 .setting-container {
@@ -362,8 +361,8 @@ onMounted(async () => {
 }
 
 .order-table tr:hover {
-  background-color: #fa6b08; /* 鼠标悬停时行的背景色变化 */
-  transition: background-color 0.3s ease; /* 平滑过渡效果 */
+  background-color: #fa6b08;
+  transition: background-color 0.3s ease;
 }
 
 .order-table td {
